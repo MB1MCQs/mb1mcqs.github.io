@@ -190,7 +190,7 @@ const QUESTIONS = [
 
 const stage = document.getElementById("stage");
 /* رابط تطبيق الويب من Google Apps Script — يُلصق هنا بعد النشر */
-const SHEET_URL = "";
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbxBHQ1VnC5OH3VX9CqFpkjSJ70an2-GJu5LeRhw9yfudqgHmZqDS664MqClt3Lkku91/exec";
 let db=null, uid=null, entries=[], mine={student:null,parent:null};
 let state = {phase:"intro", role:"student", name:"", child:"", grade:"", sec:"", order:[], i:0, score:0, answered:false};
 const qFor = idx => { const q=QUESTIONS[idx]; return (state.role==="parent" && q.parent) ? q.parent : q; };
