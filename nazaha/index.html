@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>مسابقة نزاهة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+/* Layout: one centered column — hero ledger, quiz card, then the section board */
+:root{
+  --bg:#f3f5f1; --surface:#ffffff; --ink:#15302a; --muted:#5b6f68; --line:#d9e1dc;
+  --accent:#0f6b55; --accent-ink:#ffffff; --brass:#a77b22; --brass-soft:#f4ead3;
+  --ok:#1d7a46; --ok-soft:#e1f2e7; --bad:#b03a2e; --bad-soft:#f8e3e0;
+  --display:"Readex Pro","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --body:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1714; --surface:#16231f; --ink:#e4ece8; --muted:#9db0a9; --line:#2a3a35;
+  --accent:#3fb592; --accent-ink:#06231b; --brass:#d8ac52; --brass-soft:#2f2715;
+  --ok:#5fc98a; --ok-soft:#173326; --bad:#ec8277; --bad-soft:#3a1e1b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1714; --surface:#16231f; --ink:#e4ece8; --muted:#9db0a9; --line:#2a3a35;
+  --accent:#3fb592; --accent-ink:#06231b; --brass:#d8ac52; --brass-soft:#2f2715;
+  --ok:#5fc98a; --ok-soft:#173326; --bad:#ec8277; --bad-soft:#3a1e1b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.75;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.35}
+.eyebrow{font-size:13px;color:var(--brass);font-weight:600;letter-spacing:.02em}
+.num{font-variant-numeric:tabular-nums}
+
+/* Hero */
+.hero{display:flex;flex-direction:column;gap:14px;padding-bottom:22px;border-bottom:2px solid var(--ink)}
+.hero h1{font-size:clamp(30px,6vw,44px);font-weight:700}
+.hero h1 span{color:var(--accent)}
+.hero p.lede{margin:0;color:var(--muted);max-width:60ch}
+.ledger{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;overflow:hidden}
+.ledger div{padding:12px 16px;border-inline-start:1px solid var(--line);min-width:0}
+.ledger div:first-child{border-inline-start:0}
+.ledger dt{font-size:12.5px;color:var(--muted)}
+.ledger dd{margin:0;font-weight:600;font-family:var(--display)}
+@media (max-width:460px){.ledger div{border-inline-start:0;border-top:1px solid var(--line)}.ledger div:first-child{border-top:0}}
+
+/* Card */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:18px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:460px){.row{grid-template-columns:1fr}}
+label{font-weight:600;font-size:14.5px}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:2px}
+.btn{font:inherit;font-family:var(--display);font-weight:600;border:0;border-radius:9px;padding:12px 22px;cursor:pointer;background:var(--accent);color:var(--accent-ink);align-self:flex-start}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.hint{font-size:13.5px;color:var(--muted);margin:0}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.seg button{font:inherit;font-family:var(--display);font-weight:600;border:0;background:transparent;color:var(--muted);padding:12px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.seg button small{font-family:var(--body);font-weight:400;font-size:12.5px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.tag.parent{border-color:var(--brass);color:var(--brass);background:var(--brass-soft)}
+.err{color:var(--bad);font-size:14px;margin:0}
+
+/* Quiz */
+.progress{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px;color:var(--muted)}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;flex:1}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.q{font-size:20px;font-weight:600}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{font:inherit;text-align:start;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;gap:12px;align-items:flex-start}
+.opt b{font-family:var(--display);color:var(--muted);min-width:1.2em}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt:disabled{cursor:default}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.explain{border-inline-start:3px solid var(--brass);background:var(--brass-soft);padding:10px 14px;border-radius:0 8px 8px 0;font-size:15px}
+.explain strong{display:block;font-family:var(--display)}
+
+/* Result */
+.score{display:flex;align-items:baseline;gap:10px}
+.score .big{font-family:var(--display);font-size:56px;font-weight:700;color:var(--accent);line-height:1}
+.badge{display:inline-block;font-size:13px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--brass-soft);color:var(--brass)}
+
+/* Board */
+.board{display:flex;flex-direction:column;gap:18px}
+.board-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat span{font-size:13px;color:var(--muted)}
+.stat strong{display:block;font-family:var(--display);font-size:26px}
+.champ{display:flex;gap:16px;align-items:center;background:var(--ink);color:var(--bg);border-radius:14px;padding:18px 20px}
+.champ .seal{flex:none;width:60px;height:60px;border-radius:50%;border:2px solid var(--brass);display:grid;place-items:center;font-family:var(--display);font-weight:700;color:var(--brass);font-size:18px}
+.champ h3{font-size:21px}
+.champ p{margin:0;opacity:.8;font-size:14px}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:10px 14px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:13px;color:var(--muted);font-weight:600;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.meter{width:40%;min-width:120px}
+.meterbar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.meterbar i{display:block;height:100%;background:var(--brass)}
+.empty{padding:20px;text-align:center;color:var(--muted)}
+.note{font-size:13.5px;color:var(--muted);margin:0}
+footer{font-size:13px;color:var(--muted);text-align:center;border-top:1px solid var(--line);padding-top:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header class="hero">
+    <div class="eyebrow">مسابقة إلكترونية لطالبات المرحلة الثانوية</div>
+    <h1>نزاهة: <span>للتثقيف بقيم النزاهة ومكافحة الفساد</span></h1>
+    <p class="lede">خمسة عشر سؤالاً عن النزاهة والأمانة وحماية المال العام، للطالبات وأمهاتهن. تظهر الإجابة الصحيحة فوراً مع شرح قصير، وتُحسب كل مشاركة لصالح الشعبة في لوحة التفاعل، سواء شاركت الطالبة أو ولية أمرها.</p>
+    <dl class="ledger">
+      <div><dt>مدة المسابقة</dt><dd class="num">٢٣/٥/١٤٤٨ هـ – ٢٩/٦/١٤٤٨ هـ</dd></div>
+      <div><dt>إشراف المعلمتين</dt><dd>مريم بانافع · حنان الحارثي</dd></div>
+      <div><dt>عدد الأسئلة</dt><dd class="num">١٥ سؤالاً</dd></div>
+    </dl>
+  </header>
+
+  <main id="stage" class="card" aria-live="polite"></main>
+
+  <section class="board" aria-labelledby="boardTitle">
+    <div class="board-head">
+      <div>
+        <div class="eyebrow">لوحة التفاعل</div>
+        <h2 id="boardTitle">الشعب والمشاركات</h2>
+      </div>
+      <p class="note" id="boardStatus">جارٍ تحميل المشاركات…</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>كل المشاركات</span><strong class="num" id="sTotal">٠</strong></div>
+      <div class="stat"><span>الطالبات</span><strong class="num" id="sStudents">٠</strong></div>
+      <div class="stat"><span>أولياء الأمور</span><strong class="num" id="sParents">٠</strong></div>
+      <div class="stat"><span>الشعب المشاركة</span><strong class="num" id="sSections">٠</strong></div>
+      <div class="stat"><span>متوسط الدرجات</span><strong class="num" id="sAvg">–</strong></div>
+    </div>
+    <div class="champ" id="champ" hidden>
+      <div class="seal" id="champSeal"></div>
+      <div><p>الشعبة الأكثر تفاعلاً</p><h3 id="champName"></h3><p id="champMeta" class="num"></p></div>
+    </div>
+    <div>
+      <h3 style="font-size:17px;margin-bottom:10px">ترتيب الشعب</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>#</th><th>الشعبة</th><th>المشاركات</th><th>طالبات</th><th>أولياء أمور</th><th>متوسط الدرجة</th><th>نسبة التفاعل</th></tr></thead>
+        <tbody id="secBody"><tr><td colspan="7" class="empty">لم تشارك أي شعبة بعد. كوني أول المشاركات.</td></tr></tbody>
+      </table></div>
+    </div>
+    <div>
+      <h3 style="font-size:17px;margin-bottom:10px">أسماء المشاركات</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>#</th><th>الاسم</th><th>الصفة</th><th>الشعبة</th><th>الدرجة</th></tr></thead>
+        <tbody id="pBody"><tr><td colspan="5" class="empty">ستظهر الأسماء هنا بعد أول مشاركة.</td></tr></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <footer>إعداد وإشراف: أ. مريم بانافع – أ. حنان الحارثي · للإبلاغ عن الفساد: هيئة الرقابة ومكافحة الفساد «نزاهة»، الرقم <span class="num">980</span></footer>
+</div>
+
+<script>
+(function(){
+const AR = n => String(n).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
+const LETTERS = ["أ","ب","ج","د"];
+const GRADES = ["أول ثانوي","ثاني ثانوي","ثالث ثانوي"];
+
+const QUESTIONS = [
+ {q:"ما المقصود بالنزاهة؟", o:["الالتزام بالأمانة والصدق والعدل في القول والعمل","الحصول على أعلى الدرجات بأي طريقة","تجنب التعامل مع الآخرين","طاعة الأصدقاء في كل ما يطلبونه"], a:0, e:"النزاهة سلوك يقوم على الأمانة والصدق والعدل، ويظهر في التعامل اليومي قبل أن يظهر في المناصب."},
+ {q:"دفع مبلغ أو تقديم هدية لموظف مقابل إنجاز معاملة أو تجاوز نظام يُسمّى:", o:["مكافأة","رشوة","تبرعاً","حافزاً"], a:1, e:"هذه رشوة، وهي من أخطر صور الفساد لأنها تشتري حقاً ليس لصاحبها أو تُسقط حقاً لغيره."},
+ {q:"استخدام الموظف لمنصبه لتحقيق مصلحة شخصية له أو لأقاربه يُعدّ:", o:["حقاً من حقوق الوظيفة","مهارة إدارية","إساءة لاستعمال السلطة","عملاً تطوعياً"], a:2, e:"الوظيفة العامة أمانة، واستغلالها لمصلحة خاصة إساءة لاستعمال السلطة."},
+ {q:"تقديم شخص على غيره في وظيفة أو خدمة بسبب القرابة أو المعرفة لا الكفاءة هو:", o:["العدالة","المحسوبية والواسطة","الشفافية","التعاون"], a:1, e:"المحسوبية تُضيّع حق الأكفأ وتُضعف ثقة الناس بالمؤسسات."},
+ {q:"الجهة المختصة بمكافحة الفساد في المملكة العربية السعودية هي:", o:["هيئة الرقابة ومكافحة الفساد (نزاهة)","وزارة التعليم","الهيئة العامة للإحصاء","هيئة الهلال الأحمر"], a:0, e:"تتولى هيئة الرقابة ومكافحة الفساد «نزاهة» حماية النزاهة وتلقي البلاغات ومتابعتها."},
+ {q:"الرقم المخصص لتلقي بلاغات الفساد لدى «نزاهة» هو:", o:["911","937","980","999"], a:2, e:"الرقم 980 مخصص للبلاغات، ويمكن الإبلاغ أيضاً عبر موقع الهيئة وتطبيقها."},
+ {q:"يوافق اليوم الدولي لمكافحة الفساد:", o:["١ يناير","٩ ديسمبر","٢٣ سبتمبر","٢٢ فبراير"], a:1, e:"أقرّت الأمم المتحدة يوم ٩ ديسمبر يوماً دولياً لمكافحة الفساد."},
+ {q:"طلبت منكِ زميلتكِ أن تُريها إجاباتكِ أثناء الاختبار. التصرف الصحيح:", o:["أساعدها لأنها صديقتي","أرفض بلطف وأعرض مساعدتها في المذاكرة لاحقاً","أخبرها بنصف الإجابات فقط","أتجاهل الموقف وأترك ورقتي مكشوفة"], a:1, e:"الغش في الاختبار صورة مبكرة من صور الفساد، والرفض اللطيف مع عرض المساعدة الحقيقية يحفظ الأمانة والصداقة معاً.",
+  parent:{q:"أخبرتكِ ابنتكِ أن زميلتها طلبت منها إجاباتها أثناء الاختبار. أفضل توجيه تقدّمينه لها:", o:["ساعديها حتى لا تخسري صداقتها","ارفضي بلطف، واعرضي عليها المذاكرة معاً قبل الاختبار","أعطيها نصف الإجابات فقط","لا تتدخلي واتركي ورقتكِ مكشوفة"], a:1, e:"الغش صورة مبكرة من صور الفساد، وتوجيه الأم ابنتها إلى الرفض اللطيف مع المساعدة الحقيقية يغرس الأمانة دون أن تخسر صداقتها."}},
+ {q:"قال النبي ﷺ: «من غشّنا فليس منّا». يدل الحديث على أن الغش:", o:["أمر بسيط لا يضر","مقبول في الاختبارات فقط","سلوك محرّم يُخرج صاحبه عن هدي المسلمين","مسموح إذا لم يعلم به أحد"], a:2, e:"الحديث رواه مسلم، وهو أصل في تحريم الغش بجميع صوره في البيع والعمل والدراسة."},
+ {q:"قال تعالى: ﴿إِنَّ اللَّهَ يَأْمُرُكُمْ أَن تُؤَدُّوا الْأَمَانَاتِ إِلَىٰ أَهْلِهَا﴾ في سورة:", o:["البقرة","النساء","يوسف","الحجرات"], a:1, e:"الآية ٥٨ من سورة النساء، وتشمل الأمانة كل ما اؤتمن عليه الإنسان من مال وعمل وكلمة."},
+ {q:"المحافظة على أثاث المدرسة وأجهزتها وعدم إتلافها تُعدّ:", o:["أمراً لا يخص الطالبات","حماية للمال العام","مسؤولية عامل النظافة وحده","تصرفاً اختيارياً"], a:1, e:"ممتلكات المدرسة جزء من المال العام، وحمايتها مسؤولية كل من يستفيد منها."},
+ {q:"ما المقصود بالشفافية في العمل؟", o:["إخفاء القرارات عن الآخرين","وضوح الإجراءات وإتاحة المعلومات لمن يحق له معرفتها","تغيير الأنظمة باستمرار","العمل دون رقابة"], a:1, e:"الشفافية تجعل الإجراءات واضحة ومفهومة، فتقل فرص الفساد وتزيد الثقة."},
+ {q:"من آثار الفساد على المجتمع:", o:["تسريع التنمية","زيادة الثقة بين الناس","هدر المال العام وتعطيل التنمية","تحسين جودة الخدمات"], a:2, e:"الفساد يحوّل الموارد من مستحقيها، فيضعف الخدمات ويؤخر مشاريع التنمية."},
+ {q:"تقوم رؤية المملكة ٢٠٣٠ على ثلاثة محاور، ويرتبط بها مفهوم «الحكومة الفاعلة» القائمة على الشفافية والمساءلة، وهو ضمن محور:", o:["مجتمع حيوي","اقتصاد مزدهر","وطن طموح","سياحة متجددة"], a:2, e:"محور «وطن طموح» يتضمن الحكومة الفاعلة، ومن ركائزها الشفافية والمساءلة ومكافحة الفساد."},
+ {q:"الإبلاغ عن الفساد عند العلم به:", o:["مسؤولية وطنية وسلوك إيجابي","تدخّل في شؤون الآخرين","أمر لا فائدة منه","واجب على الموظفين فقط"], a:0, e:"الإبلاغ يحمي المال العام وحقوق الناس، وهو مسؤولية كل فرد في المجتمع."}
+];
+
+const stage = document.getElementById("stage");
+/* رابط تطبيق الويب من Google Apps Script — يُلصق هنا بعد النشر */
+const SHEET_URL = "";
+let db=null, uid=null, entries=[], mine={student:null,parent:null};
+let state = {phase:"intro", role:"student", name:"", child:"", grade:"", sec:"", order:[], i:0, score:0, answered:false};
+const qFor = idx => { const q=QUESTIONS[idx]; return (state.role==="parent" && q.parent) ? q.parent : q; };
+const roleLabel = r => r==="parent" ? "ولية أمر" : "طالبة";
+
+function el(tag, attrs, ...kids){
+  const n=document.createElement(tag);
+  for(const k in (attrs||{})){ if(k==="class") n.className=attrs[k]; else if(k==="text") n.textContent=attrs[k]; else if(k.startsWith("on")) n.addEventListener(k.slice(2),attrs[k]); else n.setAttribute(k,attrs[k]); }
+  kids.forEach(k=>{ if(k!=null) n.append(k.nodeType?k:document.createTextNode(k)); });
+  return n;
+}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+const secLabel = (g,s)=> g+" – شعبة "+AR(s);
+function verdict(p){ if(p>=.9) return "سفيرة النزاهة"; if(p>=.7) return "واعية بقيم النزاهة"; if(p>=.5) return "على الطريق الصحيح"; return "تحتاج مزيداً من الاطلاع"; }
+
+/* ---------- Stages ---------- */
+function renderIntro(){
+  stage.replaceChildren();
+  if(mine[state.role]){ renderDone(mine[state.role], true); return; }
+  const isParent = state.role==="parent";
+  const roleBtn = (r,title,sub) => el("button",{type:"button","aria-pressed":String(state.role===r),onclick:()=>{ state.name=nameIn.value; state.child=childIn.value; state.grade=gradeSel.value; state.sec=secSel.value; state.role=r; renderIntro(); }}, title, el("small",{text:sub}));
+  const seg = el("div",{class:"seg",role:"group","aria-label":"نوع المشاركة"}, roleBtn("student","أنا طالبة","أشارك باسمي"), roleBtn("parent","أنا ولية أمر","أشارك لصالح شعبة ابنتي"));
+  const nameIn = el("input",{id:"pname",type:"text",autocomplete:"name",placeholder: isParent?"مثال: أم نورة – هيفاء سعد الغامدي":"مثال: نورة عبدالله القرشي",maxlength:"60"});
+  nameIn.value = state.name;
+  const childIn = el("input",{id:"pchild",type:"text",placeholder:"مثال: نورة عبدالله القرشي",maxlength:"60"});
+  childIn.value = state.child;
+  const gradeSel = el("select",{id:"pgrade"}, el("option",{value:"",text:"اختاري الصف"}), ...GRADES.map(g=>el("option",{value:g,text:g})));
+  gradeSel.value = state.grade;
+  const secSel = el("select",{id:"psec"}, el("option",{value:"",text:"اختاري الشعبة"}), ...[1,2,3,4,5,6,7,8].map(n=>el("option",{value:String(n),text:"شعبة "+AR(n)})));
+  secSel.value = state.sec;
+  const err = el("p",{class:"err",hidden:""});
+  const start = el("button",{class:"btn",type:"submit",text:"ابدئي المسابقة"});
+  const form = el("form",{class:"card",style:"padding:0;border:0;gap:18px"},
+    el("div",{}, el("div",{class:"eyebrow",text:"بيانات المشاركة"}), el("h2",{style:"font-size:24px",text: isParent?"قسم أولياء الأمور":"سجّلي اسمكِ وشعبتكِ"})),
+    seg,
+    isParent ? el("p",{class:"hint",text:"شاركي ابنتكِ قيم النزاهة. تُضاف درجتكِ إلى شعبة ابنتكِ، فترتفع الشعبة في ترتيب التفاعل."}) : null,
+    el("div",{class:"field"}, el("label",{for:"pname",text: isParent?"اسم ولية الأمر":"الاسم الثلاثي"}), nameIn),
+    isParent ? el("div",{class:"field"}, el("label",{for:"pchild",text:"اسم الابنة"}), childIn) : null,
+    el("div",{class:"row"},
+      el("div",{class:"field"}, el("label",{for:"pgrade",text: isParent?"صف الابنة":"الصف"}), gradeSel),
+      el("div",{class:"field"}, el("label",{for:"psec",text: isParent?"شعبة الابنة":"الشعبة"}), secSel)),
+    err, start,
+    el("p",{class:"hint",text: db ? "مشاركة واحدة لكل جهاز. تُسجَّل الدرجة باسم المشاركة لصالح الشعبة المختارة." : "وضع التجربة: يمكنكِ حل المسابقة، لكن الدرجة لن تُضاف إلى لوحة التفاعل المشتركة."})
+  );
+  form.addEventListener("submit",ev=>{
+    ev.preventDefault();
+    const name = nameIn.value.trim().replace(/\s+/g," ");
+    const child = childIn.value.trim().replace(/\s+/g," ");
+    if(name.split(" ").length<2){ err.textContent= isParent?"اكتبي اسمكِ الأول واسم العائلة على الأقل.":"اكتبي اسمكِ الأول واسم العائلة على الأقل."; err.hidden=false; nameIn.focus(); return; }
+    if(isParent && child.length<2){ err.textContent="اكتبي اسم ابنتكِ."; err.hidden=false; childIn.focus(); return; }
+    if(!gradeSel.value||!secSel.value){ err.textContent= isParent?"اختاري صف ابنتكِ وشعبتها.":"اختاري الصف والشعبة."; err.hidden=false; return; }
+    Object.assign(state,{name,child:isParent?child:"",grade:gradeSel.value,sec:secSel.value,phase:"quiz",order:shuffle(QUESTIONS.map((_,i)=>i)),i:0,score:0,answered:false});
+    renderQuestion();
+  });
+  stage.append(form);
+}
+
+function renderQuestion(){
+  stage.replaceChildren();
+  const total = QUESTIONS.length, q = qFor(state.order[state.i]);
+  const bar = el("div",{class:"bar"}, el("i",{style:"width:"+(state.i/total*100)+"%"}));
+  const prog = el("div",{class:"progress"}, el("span",{class:"num",text:"السؤال "+AR(state.i+1)+" من "+AR(total)}), bar, el("span",{class:"num",text:"الدرجة "+AR(state.score)}));
+  const opts = el("div",{class:"opts"});
+  const explain = el("div",{class:"explain",hidden:""});
+  const next = el("button",{class:"btn",type:"button",hidden:"",text: state.i+1<total ? "السؤال التالي" : "عرض النتيجة"});
+  q.o.forEach((txt,k)=>{
+    const b = el("button",{class:"opt",type:"button"}, el("b",{text:LETTERS[k]}), el("span",{text:txt}));
+    b.addEventListener("click",()=>{
+      if(state.answered) return; state.answered=true;
+      const ok = k===q.a; if(ok) state.score++;
+      [...opts.children].forEach((c,ci)=>{ c.disabled=true; if(ci===q.a) c.classList.add("right"); else if(ci===k) c.classList.add("wrong"); });
+      explain.replaceChildren(el("strong",{text: ok?"إجابة صحيحة":"الإجابة الصحيحة: "+q.o[q.a]}), q.e);
+      explain.hidden=false; next.hidden=false; next.focus();
+      prog.lastChild.textContent = "الدرجة "+AR(state.score);
+    });
+    opts.append(b);
+  });
+  next.addEventListener("click",()=>{ state.answered=false; state.i++; if(state.i<total) renderQuestion(); else finish(); });
+  stage.append(prog, el("h2",{class:"q",text:q.q}), opts, explain, next);
+  stage.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth", block:"start"});
+}
+
+async function finish(){
+  const entry = {role:state.role, child:state.child, name:state.name, grade:state.grade, section:state.sec, score:state.score, total:QUESTIONS.length, at:new Date().toISOString()};
+  stage.replaceChildren(el("p",{class:"hint",text:"جارٍ حفظ نتيجتكِ…"}));
+  let saved=false, msg="";
+  if(db){
+    try{
+      const r = await fetch(SHEET_URL,{method:"POST",body:JSON.stringify({...entry,id:uid+"-"+entry.role})});
+      const j = await r.json();
+      if(j.ok || j.error==="duplicate"){ saved=true; mine[entry.role]=entry; store("nazaha_entry_"+entry.role,JSON.stringify(entry)); loadBoard(); }
+      else msg = "تعذّر حفظ النتيجة: تأكدي من البيانات وحاولي مرة أخرى.";
+    }catch(e){ msg = "تعذّر حفظ النتيجة الآن. تأكدي من اتصال الإنترنت وحاولي مرة أخرى."; }
+  } else {
+    msg = "هذه نتيجة تجريبية ولم تُضف إلى لوحة التفاعل المشتركة.";
+  }
+  renderDone(entry,false,saved,msg);
+}
+
+function renderDone(entry, already, saved, msg){
+  stage.replaceChildren();
+  const p = entry.score/entry.total;
+  stage.append(
+    el("div",{}, el("div",{class:"eyebrow",text: already?"سبق لكِ المشاركة":"انتهت المسابقة"}), el("h2",{style:"font-size:24px",text:"أحسنتِ يا "+entry.name.split(" ")[0]})),
+    el("div",{class:"score"}, el("span",{class:"big num",text:AR(entry.score)}), el("span",{class:"num",text:"من "+AR(entry.total)})),
+    el("div",{}, el("span",{class:"badge",text:verdict(p)})),
+    el("p",{style:"margin:0",text: entry.role==="parent" ? "شعبة ابنتكِ "+(entry.child||"")+": "+secLabel(entry.grade,entry.section) : "الشعبة: "+secLabel(entry.grade,entry.section)}),
+    el("p",{class: msg?"err":"hint",text: msg || (entry.role==="parent"
+      ? (already ? "سبق أن شاركتِ، ودرجتكِ مضافة لشعبة ابنتكِ في اللوحة أدناه." : "شكراً لمشاركتكِ. أُضيفت درجتكِ إلى شعبة ابنتكِ، شاركي الرابط مع أمهات الشعبة.")
+      : (already ? "تُحتسب مشاركة واحدة لكل طالبة، ودرجتكِ مضافة لشعبتكِ في اللوحة أدناه." : "أُضيفت درجتكِ إلى شعبتكِ. شاركي الرابط مع زميلاتكِ وأمهاتهن لترتفع شعبتكِ في الترتيب."))})
+  );
+  if(!db || msg){
+    stage.append(el("button",{class:"btn ghost",type:"button",text:"إعادة المحاولة",onclick:()=>{state.phase="intro";renderIntro();}}));
+  } else {
+    const other = entry.role==="parent" ? "student" : "parent";
+    if(!mine[other]) stage.append(el("button",{class:"btn ghost",type:"button",
+      text: other==="parent" ? "مشاركة ولية الأمر من نفس الجهاز" : "مشاركة الطالبة من نفس الجهاز",
+      onclick:()=>{ state.phase="intro"; state.role=other; state.name=""; renderIntro(); }}));
+  }
+}
+
+/* ---------- Board ---------- */
+function renderBoard(){
+  const list = entries.slice().sort((a,b)=> b.score-a.score || String(a.at).localeCompare(String(b.at)));
+  const total=list.length;
+  const groups={};
+  list.forEach(e=>{ const k=e.grade+"|"+e.section; (groups[k]=groups[k]||{grade:e.grade,section:e.section,n:0,st:0,pa:0,sum:0}); const g=groups[k]; g.n++; if(e.role==="parent") g.pa++; else g.st++; g.sum+=e.score/e.total*100; });
+  const secs = Object.values(groups).sort((a,b)=> b.n-a.n || b.sum/b.n - a.sum/a.n);
+  const nParents = list.filter(e=>e.role==="parent").length;
+  document.getElementById("sTotal").textContent=AR(total);
+  document.getElementById("sStudents").textContent=AR(total-nParents);
+  document.getElementById("sParents").textContent=AR(nParents);
+  document.getElementById("sSections").textContent=AR(secs.length);
+  document.getElementById("sAvg").textContent= total? AR(Math.round(list.reduce((s,e)=>s+e.score/e.total*100,0)/total))+"٪" : "–";
+
+  const champ=document.getElementById("champ");
+  if(secs.length){
+    const c=secs[0];
+    champ.hidden=false;
+    document.getElementById("champSeal").textContent=AR(c.section);
+    document.getElementById("champName").textContent=secLabel(c.grade,c.section);
+    document.getElementById("champMeta").textContent=AR(c.n)+" مشاركة ("+AR(c.st)+" طالبات، "+AR(c.pa)+" أولياء أمور) · متوسط "+AR(Math.round(c.sum/c.n))+"٪";
+  } else champ.hidden=true;
+
+  const sb=document.getElementById("secBody");
+  if(!secs.length){ sb.replaceChildren(el("tr",{},el("td",{colspan:"7",class:"empty",text:"لم تشارك أي شعبة بعد. كوني أول المشاركات."}))); }
+  else{
+    const maxN=secs[0].n;
+    sb.replaceChildren(...secs.map((g,i)=>el("tr",{},
+      el("td",{class:"num",text:AR(i+1)}),
+      el("td",{text:secLabel(g.grade,g.section)}),
+      el("td",{class:"num",text:AR(g.n)}),
+      el("td",{class:"num",text:AR(g.st)}),
+      el("td",{class:"num",text:AR(g.pa)}),
+      el("td",{class:"num",text:AR(Math.round(g.sum/g.n))+"٪"}),
+      el("td",{class:"meter"}, el("div",{class:"meterbar"}, el("i",{style:"width:"+(g.n/maxN*100)+"%"}))))));
+  }
+  const pb=document.getElementById("pBody");
+  if(!total){ pb.replaceChildren(el("tr",{},el("td",{colspan:"5",class:"empty",text:"ستظهر الأسماء هنا بعد أول مشاركة."}))); }
+  else pb.replaceChildren(...list.map((e,i)=>el("tr",{},
+    el("td",{class:"num",text:AR(i+1)}),
+    el("td",{text: e.role==="parent" && e.child ? e.name+" (والدة "+e.child+")" : e.name}),
+    el("td",{}, el("span",{class: e.role==="parent"?"tag parent":"tag",text:roleLabel(e.role)})),
+    el("td",{text:secLabel(e.grade,e.section)}),
+    el("td",{class:"num",text:AR(e.score)+" / "+AR(e.total)}))));
+}
+
+/* ---------- Boot ---------- */
+const status=document.getElementById("boardStatus");
+function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(_){ return null; } }
+uid = store("nazaha_id");
+if(!uid){ uid = "d"+Date.now().toString(36)+Math.random().toString(36).slice(2,10); store("nazaha_id",uid); }
+["student","parent"].forEach(r=>{ try{ const m = store("nazaha_entry_"+r); if(m) mine[r] = JSON.parse(m); }catch(_){} });
+db = SHEET_URL ? true : null;
+
+let loading=false;
+async function loadBoard(){
+  if(!db || loading) return; loading=true;
+  try{
+    const r = await fetch(SHEET_URL+"?t="+Date.now());
+    const j = await r.json();
+    entries = (j.entries||[]).map(e=>({...e, score:+e.score, total:+e.total||QUESTIONS.length, section:String(e.section)}));
+    status.textContent = "تتحدث تلقائياً كل ٣٠ ثانية";
+    renderBoard();
+  }catch(e){ status.textContent="تعذّر تحميل المشاركات حالياً."; }
+  loading=false;
+}
+renderIntro(); renderBoard();
+if(db){ loadBoard(); setInterval(()=>{ if(!document.hidden) loadBoard(); },30000); }
+else status.textContent="لم تُربط اللوحة بجدول النتائج بعد.";
+})();
+</script>
+</body>
+</html>
