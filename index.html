@@ -306,11 +306,33 @@ button.hsearch{margin-bottom:12px;border:1.5px solid var(--teal);font-weight:700
 .mres .openq{margin-top:10px}
 .tbtn.on{background:var(--teal)}
 
+
+/* collapsible sidebar (v19.3) */
+.menu-btn{display:inline-block}
+body.sidehid .wrap{grid-template-columns:1fr}
+body.sidehid .side{display:none}
+.side .sidectl{display:flex;gap:6px;margin-bottom:8px}
+.side .sidectl button{flex:1;background:var(--grey);border:1px solid var(--line);border-radius:6px;padding:5px 6px;font-size:12px;font-weight:700;color:var(--navy);cursor:pointer}
+.side .sidectl button:hover{background:#e8eef4}
+.dm{position:relative}
+.dm>.dh{padding-left:26px}
+.dm>.fold,.tools>.fold{position:absolute;left:0;top:0;width:22px;height:27px;line-height:27px;border:0;background:none;color:var(--teal);font-size:13px;cursor:pointer;padding:0;border-radius:4px}
+.dm>.fold:hover,.tools>.fold:hover{background:#e8eef4}
+.dm.closed>:not(.dh):not(.fold){display:none}
+.side .tools{position:relative}
+.side .tools>.tlh{font-size:10.5px;letter-spacing:.14em;font-weight:700;color:var(--gold);text-transform:uppercase;padding:0 0 0 26px;line-height:27px}
+.side .tools>.fold{top:12px}
+.side .tools.closed>:not(.fold):not(.tlh){display:none}
+.grpf{cursor:pointer;user-select:none}
+.grpf::before{content:"▾ ";color:var(--teal)}
+.grpf.closed::before{content:"▸ "}
+.grpx{display:none !important}
+@media (max-width: 860px){ body.sidehid .side{display:block} .side .hideside{display:none} }
 </style>
 </head>
 <body>
 <div class="top">
-  <button class="tbtn menu-btn" id="menuBtn" aria-label="Topics">☰ Topics</button>
+  <button class="tbtn menu-btn" id="menuBtn" aria-label="Menu" title="Show / hide the side menu">☰ Menu</button>
   <div class="brand" id="brand"><small>UQU YEAR 6 · MODULE 6B</small>Emergency &amp; Trauma — MCQ Bank</div>
   <span class="score" id="scoreAll">0 / 0 · –</span>
   <button class="tbtn" id="searchBtn" title="Search or paste a case">🔎 Search</button>
@@ -399,6 +421,49 @@ function scopeName(sc) {
   return "";
 }
 function go(scope) { if (scope.k.startsWith("tj")) UI.bank = "tj"; else if (["all", "dom", "lec"].includes(scope.k)) UI.bank = "books"; UI.scope = scope; UI.view = "q"; buildQueue(); save(); closeMenu(); render(); window.scrollTo(0, 0); }
+
+// ---------- collapsible sidebar (v19.3) ----------
+function enhanceSide(side) {
+  UI.fold = UI.fold || {};
+  const ctl = document.createElement("div"); ctl.className = "sidectl";
+  ctl.innerHTML = `<button id="foldAll" title="Collapse every section">▸ Collapse all</button><button id="openAll" title="Expand every section">▾ Expand all</button><button class="hideside" id="hideSide" title="Hide the menu (☰ Menu brings it back)">« Hide</button>`;
+  side.insertBefore(ctl, side.firstChild);
+  const keys = [];
+  side.querySelectorAll(".dm").forEach(dm => {
+    const dh = dm.querySelector(".dh"); if (!dh) return;
+    const key = UI.bank + ":" + (dh.dataset.k || "") + ":" + (dh.dataset.v || dh.textContent.trim().slice(0, 20));
+    keys.push(key);
+    const f = document.createElement("button"); f.className = "fold"; f.type = "button";
+    const set = () => { const c = !!UI.fold[key]; dm.classList.toggle("closed", c); f.textContent = c ? "▸" : "▾"; f.title = c ? "Show this section" : "Hide this section"; };
+    f.onclick = e => { e.stopPropagation(); UI.fold[key] = !UI.fold[key]; set(); save(); };
+    dm.insertBefore(f, dm.firstChild); set();
+  });
+  // loose group headers (e.g. "By domain" in compilations): fold the buttons until the next header
+  side.querySelectorAll(".grp").forEach(g => {
+    const key = UI.bank + ":grp:" + (g.closest(".dm") ? g.closest(".dm").querySelector(".dh").textContent.trim().slice(0, 20) + "/" : "") + g.textContent.trim();
+    const items = []; let n = g.nextElementSibling;
+    while (n && !["grp", "tools", "dm", "soon", "sidectl"].some(c => n.classList.contains(c))) { items.push(n); n = n.nextElementSibling; }
+    if (!items.length) return;
+    keys.push(key); g.classList.add("grpf");
+    const set = () => { const c = !!UI.fold[key]; g.classList.toggle("closed", c); items.forEach(x => x.classList.toggle("grpx", c)); };
+    g.onclick = () => { UI.fold[key] = !UI.fold[key]; set(); save(); }; set();
+  });
+  const tools = side.querySelector(".tools");
+  if (tools) {
+    const key = UI.bank + ":tools"; keys.push(key);
+    const lab = document.createElement("div"); lab.className = "tlh"; lab.textContent = "Tools & filters";
+    const f = document.createElement("button"); f.className = "fold"; f.type = "button";
+    const set = () => { const c = !!UI.fold[key]; tools.classList.toggle("closed", c); f.textContent = c ? "▸" : "▾"; };
+    f.onclick = () => { UI.fold[key] = !UI.fold[key]; set(); save(); };
+    lab.style.cursor = "pointer"; lab.onclick = f.onclick;
+    tools.insertBefore(lab, tools.firstChild); tools.insertBefore(f, tools.firstChild); set();
+  }
+  const setAll = v => { keys.forEach(k => UI.fold[k] = v); save(); renderSide(); };
+  ctl.querySelector("#foldAll").onclick = () => setAll(true);
+  ctl.querySelector("#openAll").onclick = () => setAll(false);
+  ctl.querySelector("#hideSide").onclick = () => setSideHidden(true);
+}
+function setSideHidden(v) { UI.sideHidden = !!v; document.body.classList.toggle("sidehid", UI.sideHidden); const b = document.getElementById("menuBtn"); if (b) b.classList.toggle("on", !UI.sideHidden && window.innerWidth > 860); save(); }
 // ---------- sidebar ----------
 function renderSide() {
   if (UI.bank === "tj") return renderSideTJ();
@@ -431,7 +496,7 @@ function renderSide() {
     <button class="lbtn danger" id="resetBtn">↺ Reset all progress</button>
   </div>`;
   side.innerHTML = h;
-  bindBankTabs(side);
+  bindBankTabs(side); enhanceSide(side);
   side.querySelectorAll("button[data-k]").forEach(b => b.onclick = () => go({ k: b.dataset.k, v: b.dataset.v }));
   document.getElementById("homeBtn").onclick = goHome;
   document.getElementById("shufChk").onchange = e => setShuffle(e.target.checked);
@@ -717,7 +782,7 @@ function renderSideTJ() {
     ${UI.view !== "home" ? `<button class="lbtn danger" id="resetSet">↺ Reset this set</button>` : ""}
     <button class="lbtn danger" id="resetBtn">↺ Reset all progress</button></div>`;
   side.innerHTML = h;
-  bindBankTabs(side);
+  bindBankTabs(side); enhanceSide(side);
   side.querySelectorAll("button[data-k]").forEach(b => b.onclick = () => go({ k: b.dataset.k, v: b.dataset.v }));
   side.querySelectorAll("[data-once]").forEach(b => b.onclick = () => { UI.tjOnce = b.dataset.once === "1"; if (UI.view !== "home") buildQueue(); save(); render(); });
   document.getElementById("homeBtn").onclick = goHome;
@@ -911,7 +976,8 @@ document.getElementById("brand").onclick = goHome;
 document.getElementById("searchBtn").onclick = goSearch;
 const side = document.getElementById("side"), scrim = document.getElementById("scrim");
 function closeMenu() { side.classList.remove("open"); scrim.classList.add("hidden"); }
-document.getElementById("menuBtn").onclick = () => { side.classList.add("open"); scrim.classList.remove("hidden"); };
+document.getElementById("menuBtn").onclick = () => { if (window.innerWidth > 860) { setSideHidden(!UI.sideHidden); return; } side.classList.add("open"); scrim.classList.remove("hidden"); };
+setSideHidden(!!UI.sideHidden);
 scrim.onclick = closeMenu;
 document.addEventListener("keydown", e => {
   if (UI.view !== "q" || e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
