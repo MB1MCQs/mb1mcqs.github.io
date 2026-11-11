@@ -328,6 +328,15 @@ body.sidehid .side{display:none}
 .grpf.closed::before{content:"▸ "}
 .grpx{display:none !important}
 @media (max-width: 860px){ body.sidehid .side{display:block} .side .hideside{display:none} }
+
+/* user highlights (v19.4) */
+mark.uh{background:#cfe8ff;color:inherit;box-shadow:inset 0 -2px 0 #8cc4f5;border-radius:2px;padding:0 1px;cursor:pointer}
+mark.uh mark,mark mark.uh{background:#cfe8ff}
+.hlpop{position:absolute;z-index:60;display:none;gap:4px;background:var(--navy);border-radius:8px;padding:4px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-family:var(--sans)}
+.hlpop button{border:0;border-radius:6px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer;background:#cfe8ff;color:var(--navy)}
+.hlpop button.rm{background:#fff}
+.hlclr{margin-left:auto;margin-right:6px;border:1px solid #8cc4f5;background:#eaf5ff;color:var(--navy);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+.ch .hlclr+.flag{margin-left:0}
 </style>
 </head>
 <body>
@@ -464,6 +473,68 @@ function enhanceSide(side) {
   ctl.querySelector("#hideSide").onclick = () => setSideHidden(true);
 }
 function setSideHidden(v) { UI.sideHidden = !!v; document.body.classList.toggle("sidehid", UI.sideHidden); const b = document.getElementById("menuBtn"); if (b) b.classList.toggle("on", !UI.sideHidden && window.innerWidth > 860); save(); }
+
+// ---------- user highlights (v19.4) ----------
+const HLKEY = "mb6b-hl-v1";
+let HL = {}; try { HL = JSON.parse(localStorage.getItem(HLKEY) || "{}") || {}; } catch (e) { HL = {}; }
+function saveHL() { try { localStorage.setItem(HLKEY, JSON.stringify(HL)); } catch (e) {} }
+const HL_SEL = ".stem,.vg,.vqline,.why,.dis,.snote";
+let HLCUR = null;
+function hlRegions(card) { const m = {}, out = []; card.querySelectorAll(HL_SEL).forEach(el => { if (el.parentElement.closest(HL_SEL)) return; const c = el.classList[0]; m[c] = (m[c] || 0); out.push([c + m[c], el]); m[c]++; }); return out; }
+function hlOffset(region, node, off) { const r = document.createRange(); r.setStart(region, 0); r.setEnd(node, off); return r.toString().length; }
+function hlWrap(region, s, e, idx) {
+  const tw = document.createTreeWalker(region, NodeFilter.SHOW_TEXT); let pos = 0, n; const hits = [];
+  while ((n = tw.nextNode())) { const len = n.data.length, a = pos, b = pos + len; pos = b; if (b <= s || a >= e || !len) continue; hits.push([n, Math.max(s, a) - a, Math.min(e, b) - a]); }
+  hits.forEach(([node, x, y]) => {
+    let t = node; if (x > 0) t = t.splitText(x); if (y - x < t.data.length) t.splitText(y - x);
+    const mk = document.createElement("mark"); mk.className = "uh"; mk.dataset.h = idx; mk.title = "Click to remove highlight";
+    t.parentNode.insertBefore(mk, t); mk.appendChild(t);
+  });
+}
+function applyHL(it) {
+  const card = document.querySelector("#main .card"); if (!card || !it) return;
+  HLCUR = it.id; const saved = HL[it.id] || {};
+  hlRegions(card).forEach(([key, el]) => (saved[key] || []).forEach((r, i) => hlWrap(el, r[0], r[1], key + ":" + i)));
+  const n = Object.values(saved).reduce((a, x) => a + x.length, 0), fb = card.querySelector("#flagQ");
+  if (n && fb && !card.querySelector(".hlclr")) { const c = document.createElement("button"); c.className = "hlclr"; c.textContent = "🖍 Clear highlights"; c.title = "Remove all your highlights from this question";
+    c.onclick = () => { delete HL[it.id]; saveHL(); render(); }; fb.parentNode.insertBefore(c, fb); }
+}
+function hlPop() { let p = document.getElementById("hlpop"); if (!p) { p = document.createElement("div"); p.id = "hlpop"; p.className = "hlpop"; document.body.appendChild(p); } return p; }
+function hlHide() { const p = document.getElementById("hlpop"); if (p) p.style.display = "none"; }
+function hlShow(rect, html, fn) { const p = hlPop(); p.innerHTML = html; p.style.display = "flex"; const top = rect.top + window.scrollY - 44, left = Math.max(8, Math.min(rect.left + window.scrollX + rect.width / 2 - 60, document.documentElement.clientWidth - 150)); p.style.top = Math.max(top, window.scrollY + 4) + "px"; p.style.left = left + "px"; p.querySelector("button").onmousedown = e => e.preventDefault(); p.querySelector("button").onclick = e => { e.preventDefault(); fn(); hlHide(); }; }
+function hlAdd() {
+  const sel = window.getSelection(); if (!sel || sel.isCollapsed || !HLCUR) return;
+  const rg = sel.getRangeAt(0), card = document.querySelector("#main .card"); if (!card) return;
+  const regs = hlRegions(card); let done = false;
+  regs.forEach(([key, el]) => {
+    if (!rg.intersectsNode(el)) return;
+    const s = el.contains(rg.startContainer) ? hlOffset(el, rg.startContainer, rg.startOffset) : 0;
+    const e = el.contains(rg.endContainer) ? hlOffset(el, rg.endContainer, rg.endOffset) : el.textContent.length;
+    if (e - s < 1 || !el.textContent.slice(s, e).trim()) return;
+    const o = HL[HLCUR] = HL[HLCUR] || {}, list = (o[key] = o[key] || []); list.push([s, e]);
+    list.sort((a, b) => a[0] - b[0]); const m = []; list.forEach(r => { const l = m[m.length - 1]; if (l && r[0] <= l[1]) l[1] = Math.max(l[1], r[1]); else m.push(r.slice()); }); o[key] = m; done = true;
+  });
+  sel.removeAllRanges(); if (done) { saveHL(); const y = window.scrollY; render(); window.scrollTo(0, y); }
+}
+function hlCheckSel() {
+  if (UI.view !== "q") return hlHide();
+  const sel = window.getSelection(); if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+  const rg = sel.getRangeAt(0), card = document.querySelector("#main .card"); if (!card || !card.contains(rg.commonAncestorContainer)) return;
+  if (!hlRegions(card).some(([, el]) => rg.intersectsNode(el)) || !sel.toString().trim()) return;
+  const r = rg.getBoundingClientRect(); hlShow(r, `<button>🖍 Highlight</button>`, hlAdd);
+}
+document.addEventListener("mouseup", e => { if (e.target.closest && e.target.closest("#hlpop")) return; setTimeout(hlCheckSel, 10); });
+document.addEventListener("touchend", e => { if (e.target.closest && e.target.closest("#hlpop")) return; setTimeout(hlCheckSel, 350); });
+document.addEventListener("selectionchange", () => { const s = window.getSelection(); if (!s || s.isCollapsed) setTimeout(() => { const t = window.getSelection(); if (!t || t.isCollapsed) { const p = document.getElementById("hlpop"); if (p && p.dataset.mode !== "rm") hlHide(); } }, 150); else if (window.matchMedia("(pointer:coarse)").matches) { clearTimeout(window._hlT); window._hlT = setTimeout(hlCheckSel, 500); } });
+document.addEventListener("click", e => {
+  const mk = e.target.closest && e.target.closest("mark.uh");
+  const p = document.getElementById("hlpop");
+  if (!mk) { if (p && p.dataset.mode === "rm" && !e.target.closest("#hlpop")) { p.dataset.mode = ""; hlHide(); } return; }
+  const s = window.getSelection(); if (s && !s.isCollapsed) return;
+  const [key, i] = mk.dataset.h.split(":");
+  hlShow(mk.getBoundingClientRect(), `<button class="rm">✕ Remove highlight</button>`, () => { const o = HL[HLCUR]; if (o && o[key]) { o[key].splice(+i, 1); if (!o[key].length) delete o[key]; if (!Object.keys(o).length) delete HL[HLCUR]; saveHL(); const y = window.scrollY; render(); window.scrollTo(0, y); } });
+  hlPop().dataset.mode = "rm";
+});
 // ---------- sidebar ----------
 function renderSide() {
   if (UI.bank === "tj") return renderSideTJ();
@@ -612,6 +683,7 @@ function gridHtml() {
   return h;
 }
 function render() {
+  hlHide();
   renderSide();
   const all = stat(bankOrder());
   document.getElementById("scoreAll").textContent = `${UI.bank === "tj" ? "Compilations" : "Books"} ${all.c} / ${all.a} · ${pct(all)}`;
@@ -652,6 +724,7 @@ function bindQ(it) {
   document.getElementById("nextBtn").onclick = next;
   const ni = document.getElementById("nextIn"); if (ni) ni.onclick = next;
   main.querySelectorAll(".g").forEach(b => b.onclick = () => { UI.idx = +b.dataset.i; save(); render(); window.scrollTo(0, 0); });
+  applyHL(it);
 }
 // ---------- summary ----------
 function wrongIds() { return queue.filter(id => ST.answers[id] && ST.answers[id].c && !ST.answers[id].ok); }
